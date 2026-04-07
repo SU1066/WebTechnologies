@@ -56,6 +56,11 @@
     <div class="hero">
     <img src="images/topmostpic.jpg" class="hero-image">
     </div>
+    <!-- Featured Deals Section -->
+    <div class="featured-section">
+    <h2>Featured Deals</h2>
+    <div id="product-container" class="featured-grid"></div>
+    </div>
     <div class="shoes">
         <div class="shoe-card">
             <img src="images/shoe1.jpg">
@@ -508,5 +513,20 @@
         <a href="#">California Transparency</a>
     </div>
 </footer>
+<!-- jQuery FIRST -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Your JS file SECOND -->
+<script src="script.js"></script>
+
+<!-- Modal AFTER scripts OR before (both ok, but keep clean) -->
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <span onclick="closeModal()" class="close">&times;</span>
+        <h3 id="modal-title"></h3>
+        <p id="modal-desc"></p>
+        <p id="modal-rating"></p>
+    </div>
+</div>
 </body>
 </html>
