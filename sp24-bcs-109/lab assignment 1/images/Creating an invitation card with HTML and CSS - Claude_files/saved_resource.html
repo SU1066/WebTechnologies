@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<!-- saved from url=(0012)about:srcdoc -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.13/html-to-image.min.js" integrity="sha512-iZ2ORl595Wx6miw+GuadDet4WQbdSWS3JLMoNfY8cRGoEFy6oT3G9IbcrBeL6AfkgpA51ETt/faX6yLV+/gFJg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+      (function() {
+        const originalConsole = window.console;
+        window.console = {
+          log: (...args) => {
+            originalConsole.log(...args);
+            window.parent.postMessage({ type: 'console', message: args.join(' ') }, '*');
+          },
+          error: (...args) => {
+            originalConsole.error(...args);
+            window.parent.postMessage({ type: 'console', message: 'Error: ' + args.join(' ') }, '*');
+          },
+          warn: (...args) => {
+            originalConsole.warn(...args);
+            window.parent.postMessage({ type: 'console', message: 'Warning: ' + args.join(' ') }, '*');
+          }
+        };
+
+        let requestId = 0;
+        let callbacksMap = new Map();
+        let streamControllers = new Map();
+        
+        window.claude = {
+          complete: (prompt) => {
+            return new Promise((resolve, reject) => {
+              const id = requestId++;
+              callbacksMap.set(id, { resolve, reject });
+              window.parent.postMessage({ type: 'claudeComplete', id, prompt }, '*');
+            });
+          }
+        };
+
+        window.storage = {
+          get: (key, shared = false) => {
+            return new Promise((resolve, reject) => {
+              const id = requestId++;
+              callbacksMap.set(id, { resolve, reject });
+              window.parent.postMessage({ type: 'storageGet', id, key, shared }, '*');
+            });
+          },
+          set: (key, value, shared = false) => {
+            return new Promise((resolve, reject) => {
+              const id = requestId++;
+              callbacksMap.set(id, { resolve, reject });
+              window.parent.postMessage({ type: 'storageSet', id, key, value, shared }, '*');
+            });
+          },
+          delete: (key, shared = false) => {
+            return new Promise((resolve, reject) => {
+              const id = requestId++;
+              callbacksMap.set(id, { resolve, reject });
+              window.parent.postMessage({ type: 'storageDelete', id, key, shared }, '*');
+            });
+          },
+          list: (prefix, shared = false) => {
+            return new Promise((resolve, reject) => {
+              const id = requestId++;
+              callbacksMap.set(id, { resolve, reject });
+              window.parent.postMessage({ type: 'storageList', id, prefix, shared }, '*');
+            });
+          }
+        };
+
+        let pendingBlobs = new Map();
+        URL.createObjectURL = (blob) => {
+          // Store the blob and create an ID and URL for it
+          const blobId = `blob-${Date.now()}-${Math.random()}`;
+          pendingBlobs.set(blobId, blob);
+          return `blob-request://${blobId}`;
+        };
+
+        URL.revokeObjectURL = (url) => {
+          // Remove the blob from our store
+          const blobId = url.replace("blob-request://", "");
+          pendingBlobs.delete(blobId);
+        };
+
+        const getBlobFromURL = (url) => {
+          const blobId = url.replace("blob-request://", "");
+          return pendingBlobs.get(blobId);
+        };
+
+        // Override global fetch with streaming support
+        window.fetch = (url, init = {}) => {
+          return new Promise((resolve, reject) => {
+            const id = requestId++;
+            const channelId = `fetch-${id}-${Date.now()}`;
+            
+            callbacksMap.set(id, { 
+              resolve: (response) => {
+                // Create a ReadableStream for the response body
+                const stream = new ReadableStream({
+                  start(controller) {
+                    streamControllers.set(channelId, controller);
+                  },
+                  cancel() {
+                    streamControllers.delete(channelId);
+                  }
+                });
+                
+                // Create and return the Response with the stream
+                resolve(new Response(stream, {
+                  status: response.status,
+                  statusText: response.statusText,
+                  headers: response.headers
+                }));
+              },
+              reject,
+              channelId
+            });
+            
+            window.parent.postMessage({
+              type: 'proxyFetch',
+              id,
+              url,
+              init,
+              channelId
+            }, '*');
+          });
+        };
+
+        window.addEventListener('message', async (event) => {
+          if (event.data.type === 'takeScreenshot') {
+            const rootElement = document.getElementById('artifacts-component-root-html');
+            if (!rootElement) {
+              window.parent.postMessage({
+                type: 'screenshotError',
+                error: new Error('Root element not found'),
+              }, '*');
+            }
+            const screenshot = await htmlToImage.toPng(rootElement, {
+              imagePlaceholder:
+                "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAA1JREFUGFdjePDgwX8ACOQDoNsk0PMAAAAASUVORK5CYII=",
+            });
+            window.parent.postMessage({
+              type: 'screenshotData',
+              data: screenshot,
+            }, '*');
+          } else if (event.data.type === 'claudeComplete') {
+            const callback = callbacksMap.get(event.data.id);
+            if (event.data.error) {
+              callback.reject(new Error(event.data.error));
+            } else {
+              callback.resolve(event.data.completion);
+            }
+            callbacksMap.delete(event.data.id);
+          } else if (event.data.type === 'proxyFetchResponse') {
+            const callback = callbacksMap.get(event.data.id);
+            if (event.data.error) {
+              callback.reject(new Error(event.data.error));
+              callbacksMap.delete(event.data.id);
+            } else {
+              // Initial response with headers, status, etc.
+              callback.resolve({
+                status: event.data.status,
+                statusText: event.data.statusText,
+                headers: event.data.headers
+              });
+              // Don't delete the callback yet if streaming
+              if (!event.data.body) {
+                callbacksMap.delete(event.data.id);
+              }
+            }
+          } else if (event.data.type === 'proxyFetchStream') {
+            // Handle streaming data chunks
+            const controller = streamControllers.get(event.data.channelId);
+            if (controller) {
+              if (event.data.error) {
+                controller.error(new Error(event.data.error));
+                streamControllers.delete(event.data.channelId);
+              } else if (event.data.done) {
+                controller.close();
+                streamControllers.delete(event.data.channelId);
+                // Clean up the callback
+                const callback = Array.from(callbacksMap.entries()).find(
+                  ([_, value]) => value.channelId === event.data.channelId
+                );
+                if (callback) {
+                  callbacksMap.delete(callback[0]);
+                }
+              } else if (event.data.chunk) {
+                controller.enqueue(new Uint8Array(event.data.chunk));
+              }
+            }
+          } else if (event.data.type === 'storageGet') {
+            const callback = callbacksMap.get(event.data.id);
+            if (event.data.error) {
+              callback.reject(new Error(event.data.error));
+            } else {
+              callback.resolve(event.data.result);
+            }
+            callbacksMap.delete(event.data.id);
+          } else if (event.data.type === 'storageSet') {
+            const callback = callbacksMap.get(event.data.id);
+            if (event.data.error) {
+              callback.reject(new Error(event.data.error));
+            } else {
+              callback.resolve(event.data.result);
+            }
+            callbacksMap.delete(event.data.id);
+          } else if (event.data.type === 'storageDelete') {
+            const callback = callbacksMap.get(event.data.id);
+            if (event.data.error) {
+              callback.reject(new Error(event.data.error));
+            } else {
+              callback.resolve(event.data.result);
+            }
+            callbacksMap.delete(event.data.id);
+          } else if (event.data.type === 'storageList') {
+            const callback = callbacksMap.get(event.data.id);
+            if (event.data.error) {
+              callback.reject(new Error(event.data.error));
+            } else {
+              callback.resolve(event.data.result);
+            }
+            callbacksMap.delete(event.data.id);
+          }
+        });
+
+        window.addEventListener('click', (event) => {
+          const isEl = event.target instanceof HTMLElement;
+          if (!isEl) return;
+    
+          // find ancestor links
+          const linkEl = event.target.closest("a");
+          if (!linkEl || !linkEl.href) return;
+    
+          event.preventDefault();
+          event.stopImmediatePropagation();
+    
+          if (linkEl.href.startsWith("blob-request:")) {
+            const blob = getBlobFromURL(linkEl.href);
+            if (!blob) return;
+            void blob.arrayBuffer().then((data) => {
+              window.parent.postMessage({
+                type: "downloadFile",
+                filename: linkEl.download,
+                data,
+                mimeType: blob.type || "application/octet-stream",
+              });
+            });
+          } else if (linkEl.href.startsWith("data:")) {
+            const [header, base64Data] = linkEl.href.split(",");
+            const mimeMatch = header.match(/data:([^;]+)/);
+            const mimeType = mimeMatch ? mimeMatch[1] : "application/octet-stream";
+            const binaryString = atob(base64Data);
+            const data = Uint8Array.from(binaryString, (c) =>
+              c.charCodeAt(0),
+            ).buffer;
+            window.parent.postMessage({
+              type: "downloadFile",
+              filename: linkEl.download,
+              data,
+              mimeType,
+            });
+          } else {
+            let linkUrl;
+            try {
+              linkUrl = new URL(linkEl.href);
+            } catch (error) {
+              return;
+            }
+    
+            if (linkUrl.hostname === window.location.hostname) return;
+      
+            window.parent.postMessage({
+              type: 'openExternal',
+              href: linkEl.href,
+            }, '*');
+          }
+      });
+
+        const originalOpen = window.open;
+        window.open = function (url) {
+          window.parent.postMessage({
+            type: "openExternal",
+            href: url,
+          }, "*");
+        };
+
+        window.addEventListener('error', (event) => {
+          window.parent.postMessage({ type: 'console', message: 'Uncaught Error: ' + event.message }, '*');
+        });
+      })();
+    </script>
+  
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wedding Invitation — Dr. Saleha Usman</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&amp;family=Cinzel:wght@400;500;600&amp;family=Great+Vibes&amp;family=EB+Garamond:ital,wght@0,400;1,400&amp;display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%;
+  min-height: 100vh;
+  background: #1a0a08;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ── OUTER WRAPPER ── */
+.card-wrap {
+  width: 900px;
+  max-width: 100%;
+  background: #faf6ef;
+  position: relative;
+  box-shadow: 0 30px 100px rgba(0,0,0,0.75), 0 6px 24px rgba(0,0,0,0.5);
+  overflow: hidden;
+}
+
+/* ── DAMASK TEXTURE ── */
+.damask-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(ellipse 16px 22px at 50% 50%, #8b1a1a 55%, transparent 55%),
+    radial-gradient(ellipse 7px 10px at 50% 18%, #8b1a1a 55%, transparent 55%),
+    radial-gradient(ellipse 7px 10px at 50% 82%, #8b1a1a 55%, transparent 55%),
+    radial-gradient(ellipse 10px 7px at 18% 50%, #8b1a1a 55%, transparent 55%),
+    radial-gradient(ellipse 10px 7px at 82% 50%, #8b1a1a 55%, transparent 55%);
+  background-size: 55px 55px;
+  opacity: 0.055;
+}
+
+/* ── FLORAL TOP ── */
+.floral-top {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 115px;
+  z-index: 6;
+  pointer-events: none;
+}
+.floral-bottom {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 90px;
+  z-index: 6;
+  pointer-events: none;
+}
+
+/* ── TWO PANELS SIDE BY SIDE ── */
+.panels {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  padding: 115px 0 90px;
+  min-height: 580px;
+}
+
+/* Center divider */
+.center-divider {
+  width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(180,130,60,0.6) 15%, rgba(180,130,60,0.6) 85%, transparent);
+  flex-shrink: 0;
+  align-self: stretch;
+}
+
+/* Each panel */
+.panel {
+  flex: 1;
+  padding: 16px 30px 16px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0;
+  position: relative;
+}
+
+/* Outer gold border around entire card */
+.gold-frame {
+  position: absolute;
+  inset: 80px 10px 60px 10px;
+  border: 1px solid rgba(180,130,60,0.5);
+  pointer-events: none;
+  z-index: 5;
+}
+.gold-frame::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(180,130,60,0.25);
+}
+
+/* ── TYPOGRAPHY ── */
+.bismillah {
+  font-size: 20px;
+  color: #8b1a1a;
+  margin-bottom: 8px;
+  line-height: 1;
+}
+.host-line {
+  font-family: 'Cinzel', serif;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #2a1506;
+  letter-spacing: 0.2px;
+  line-height: 1.45;
+  margin-bottom: 1px;
+}
+.host-sub {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 10px;
+  color: #8b6a30;
+  margin-bottom: 5px;
+}
+.invite-body {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 11px;
+  color: #4a3015;
+  line-height: 1.55;
+  margin-bottom: 4px;
+}
+.section-title {
+  font-family: 'Cinzel', serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #8b1a1a;
+  letter-spacing: 1px;
+  margin: 3px 0 2px;
+  line-height: 1.2;
+}
+.script-name {
+  font-family: 'Great Vibes', cursive;
+  font-size: 32px;
+  color: #8b6a30;
+  line-height: 1.15;
+  margin: 1px 0;
+}
+.with-word {
+  font-family: 'Great Vibes', cursive;
+  font-size: 22px;
+  color: #8b6a30;
+  line-height: 1;
+  margin: 1px 0;
+}
+.rank-line {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #4a3015;
+  margin: 2px 0 0;
+}
+
+/* Gold divider */
+.gold-divider {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  margin: 7px 0;
+}
+.gold-divider-line { flex: 1; height: 1px; background: linear-gradient(to right, transparent, #c8a030, transparent); }
+.gold-divider-diamond { width: 5px; height: 5px; background: #c8a030; transform: rotate(45deg); flex-shrink: 0; }
+
+/* Footer */
+.footer-grid {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+  margin-top: 5px;
+  gap: 6px;
+}
+.footer-col { flex: 1; text-align: left; }
+.footer-col.right { text-align: right; }
+.footer-col.center-col { text-align: center; flex: 1; }
+.footer-label {
+  font-family: 'Cinzel', serif;
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  color: #2a1506;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  margin-bottom: 3px;
+  display: block;
+}
+.footer-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 9px;
+  color: #4a3015;
+  line-height: 1.65;
+  display: block;
+}
+.footer-phone {
+  font-family: 'Cinzel', serif;
+  font-size: 7.5px;
+  color: #8b6a30;
+  letter-spacing: 0.3px;
+  line-height: 1.85;
+  display: block;
+}
+
+/* ── LEFT PANEL (Rukhsati) ── */
+.rukhsati-title {
+  font-family: 'Great Vibes', cursive;
+  font-size: 40px;
+  color: #8b1a1a;
+  line-height: 1.1;
+  margin-bottom: 1px;
+}
+.rukhsati-name {
+  font-family: 'Great Vibes', cursive;
+  font-size: 28px;
+  color: #8b6a30;
+  line-height: 1.2;
+  margin-bottom: 3px;
+}
+.programme-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 10px;
+  color: #4a3015;
+  margin-bottom: 6px;
+}
+.sched-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid rgba(180,130,60,0.5);
+  width: 100%;
+  margin: 3px 0 5px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.sched-cell {
+  padding: 9px 5px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.sched-cell.br { border-right: 1px solid rgba(180,130,60,0.4); }
+.sched-cell.bb { border-bottom: 1px solid rgba(180,130,60,0.4); }
+.sched-day {
+  font-family: 'Cinzel', serif;
+  font-size: 7.5px;
+  letter-spacing: 1px;
+  color: #4a3015;
+}
+.sched-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  font-weight: 600;
+  color: #8b1a1a;
+  line-height: 1;
+}
+.sched-num sup { font-size: 12px; }
+.sched-month {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 10px;
+  color: #4a3015;
+}
+.sched-event {
+  font-family: 'Cinzel', serif;
+  font-size: 7.5px;
+  letter-spacing: 0.6px;
+  color: #4a3015;
+}
+.sched-time {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #8b6a30;
+}
+.venue-label {
+  font-family: 'Cinzel', serif;
+  font-size: 8.5px;
+  letter-spacing: 2px;
+  color: #2a1506;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  margin-bottom: 3px;
+}
+.venue-name {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #8b1a1a;
+  line-height: 1.35;
+  margin-bottom: 2px;
+}
+.venue-addr {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 10px;
+  color: #4a3015;
+  line-height: 1.6;
+}
+
+/* ── SAVE AS IMAGE BUTTON ── */
+.save-bar {
+  text-align: center;
+  margin-top: 16px;
+}
+.save-btn {
+  background: #8b1a1a;
+  color: #fdf0d0;
+  border: none;
+  padding: 10px 28px;
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  border-radius: 2px;
+  box-shadow: 0 3px 14px rgba(0,0,0,0.45);
+  transition: background 0.2s, transform 0.1s;
+}
+.save-btn:hover { background: #a82020; transform: translateY(-1px); }
+
+/* ── RESPONSIVE: stack on mobile ── */
+@media (max-width: 620px) {
+  .panels { flex-direction: column; padding: 100px 0 70px; }
+  .center-divider { width: 80%; height: 1px; align-self: center; background: linear-gradient(90deg, transparent, rgba(180,130,60,0.6), transparent); }
+  .panel { padding: 14px 20px; }
+  .card-wrap { width: 100%; }
+}
+</style>
+</head>
+<body id="artifacts-component-root-html">
+
+<div style="width:100%;max-width:940px">
+
+<div class="card-wrap" id="theCard">
+
+  <!-- Damask -->
+  <div class="damask-bg"></div>
+
+  <!-- Gold border frame -->
+  <div class="gold-frame"></div>
+
+  <!-- TOP FLORALS -->
+  <div class="floral-top">
+    <svg width="100%" height="115" viewBox="0 0 900 115" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Left branch -->
+      <path d="M0 38 Q35 18 80 28 Q115 36 155 16 Q185 4 215 22" stroke="#5a1a0a" stroke-width="2" fill="none"></path>
+      <path d="M0 52 Q28 34 62 40 Q92 46 122 28 Q150 14 185 32" stroke="#5a1a0a" stroke-width="1.4" fill="none"></path>
+      <path d="M30 26 Q42 8 58 13" stroke="#5a1a0a" stroke-width="1.1" fill="none"></path>
+      <path d="M72 28 Q80 8 95 12" stroke="#5a1a0a" stroke-width="1.1" fill="none"></path>
+      <path d="M118 24 Q128 6 143 10" stroke="#5a1a0a" stroke-width="1.1" fill="none"></path>
+      <path d="M160 20 Q168 4 180 8" stroke="#5a1a0a" stroke-width="1" fill="none"></path>
+      <!-- Right branch -->
+      <path d="M900 38 Q865 18 820 28 Q785 36 745 16 Q715 4 685 22" stroke="#5a1a0a" stroke-width="2" fill="none"></path>
+      <path d="M900 52 Q872 34 838 40 Q808 46 778 28 Q750 14 715 32" stroke="#5a1a0a" stroke-width="1.4" fill="none"></path>
+      <path d="M870 26 Q858 8 842 13" stroke="#5a1a0a" stroke-width="1.1" fill="none"></path>
+      <path d="M828 28 Q820 8 805 12" stroke="#5a1a0a" stroke-width="1.1" fill="none"></path>
+      <path d="M782 24 Q772 6 757 10" stroke="#5a1a0a" stroke-width="1.1" fill="none"></path>
+      <path d="M740 20 Q732 4 720 8" stroke="#5a1a0a" stroke-width="1" fill="none"></path>
+
+      <!-- LEFT FLOWERS -->
+      <g opacity="0.96"><circle cx="18" cy="36" r="12" fill="#c41e1e"></circle><circle cx="18" cy="36" r="7.5" fill="#e02020"></circle><circle cx="18" cy="36" r="3.5" fill="#ffd080"></circle><ellipse cx="7" cy="29" rx="8" ry="5.5" fill="#c41e1e" transform="rotate(-30,7,29)"></ellipse><ellipse cx="29" cy="29" rx="8" ry="5.5" fill="#c41e1e" transform="rotate(30,29,29)"></ellipse><ellipse cx="7" cy="43" rx="8" ry="5.5" fill="#b01818" transform="rotate(30,7,43)"></ellipse><ellipse cx="29" cy="43" rx="8" ry="5.5" fill="#b01818" transform="rotate(-30,29,43)"></ellipse></g>
+      <g opacity="0.92"><circle cx="58" cy="13" r="10" fill="#c41e1e"></circle><circle cx="58" cy="13" r="6" fill="#e02020"></circle><circle cx="58" cy="13" r="2.8" fill="#ffd080"></circle><ellipse cx="49" cy="7" rx="7" ry="4.5" fill="#c41e1e" transform="rotate(-25,49,7)"></ellipse><ellipse cx="67" cy="7" rx="7" ry="4.5" fill="#c41e1e" transform="rotate(25,67,7)"></ellipse><ellipse cx="49" cy="19" rx="7" ry="4.5" fill="#b01818" transform="rotate(25,49,19)"></ellipse><ellipse cx="67" cy="19" rx="7" ry="4.5" fill="#b01818" transform="rotate(-25,67,19)"></ellipse></g>
+      <g opacity="0.88"><circle cx="96" cy="12" r="9" fill="#c41e1e"></circle><circle cx="96" cy="12" r="5.5" fill="#e02020"></circle><circle cx="96" cy="12" r="2.5" fill="#ffd080"></circle><ellipse cx="88" cy="7" rx="6" ry="4" fill="#c41e1e" transform="rotate(-20,88,7)"></ellipse><ellipse cx="104" cy="7" rx="6" ry="4" fill="#c41e1e" transform="rotate(20,104,7)"></ellipse></g>
+      <g opacity="0.86"><circle cx="140" cy="20" r="10" fill="#c41e1e"></circle><circle cx="140" cy="20" r="6" fill="#e02020"></circle><circle cx="140" cy="20" r="2.5" fill="#ffd080"></circle><ellipse cx="131" cy="14" rx="6.5" ry="4.5" fill="#c41e1e" transform="rotate(-25,131,14)"></ellipse><ellipse cx="149" cy="14" rx="6.5" ry="4.5" fill="#c41e1e" transform="rotate(25,149,14)"></ellipse></g>
+      <g opacity="0.82"><circle cx="183" cy="34" r="8" fill="#c41e1e"></circle><circle cx="183" cy="34" r="4.5" fill="#e02020"></circle><circle cx="183" cy="34" r="2" fill="#ffd080"></circle></g>
+      <circle cx="38" cy="52" r="5.5" fill="#c41e1e" opacity="0.68"></circle><circle cx="38" cy="52" r="2.5" fill="#e02020" opacity="0.8"></circle>
+      <circle cx="78" cy="44" r="4.5" fill="#c41e1e" opacity="0.62"></circle>
+      <circle cx="115" cy="38" r="5" fill="#c41e1e" opacity="0.65"></circle>
+      <circle cx="158" cy="42" r="4" fill="#c41e1e" opacity="0.6"></circle>
+
+      <!-- RIGHT FLOWERS (mirror) -->
+      <g opacity="0.96"><circle cx="882" cy="36" r="12" fill="#c41e1e"></circle><circle cx="882" cy="36" r="7.5" fill="#e02020"></circle><circle cx="882" cy="36" r="3.5" fill="#ffd080"></circle><ellipse cx="871" cy="29" rx="8" ry="5.5" fill="#c41e1e" transform="rotate(30,871,29)"></ellipse><ellipse cx="893" cy="29" rx="8" ry="5.5" fill="#c41e1e" transform="rotate(-30,893,29)"></ellipse><ellipse cx="871" cy="43" rx="8" ry="5.5" fill="#b01818" transform="rotate(-30,871,43)"></ellipse><ellipse cx="893" cy="43" rx="8" ry="5.5" fill="#b01818" transform="rotate(30,893,43)"></ellipse></g>
+      <g opacity="0.92"><circle cx="842" cy="13" r="10" fill="#c41e1e"></circle><circle cx="842" cy="13" r="6" fill="#e02020"></circle><circle cx="842" cy="13" r="2.8" fill="#ffd080"></circle><ellipse cx="833" cy="7" rx="7" ry="4.5" fill="#c41e1e" transform="rotate(25,833,7)"></ellipse><ellipse cx="851" cy="7" rx="7" ry="4.5" fill="#c41e1e" transform="rotate(-25,851,7)"></ellipse><ellipse cx="833" cy="19" rx="7" ry="4.5" fill="#b01818" transform="rotate(-25,833,19)"></ellipse><ellipse cx="851" cy="19" rx="7" ry="4.5" fill="#b01818" transform="rotate(25,851,19)"></ellipse></g>
+      <g opacity="0.88"><circle cx="804" cy="12" r="9" fill="#c41e1e"></circle><circle cx="804" cy="12" r="5.5" fill="#e02020"></circle><circle cx="804" cy="12" r="2.5" fill="#ffd080"></circle><ellipse cx="796" cy="7" rx="6" ry="4" fill="#c41e1e" transform="rotate(20,796,7)"></ellipse><ellipse cx="812" cy="7" rx="6" ry="4" fill="#c41e1e" transform="rotate(-20,812,7)"></ellipse></g>
+      <g opacity="0.86"><circle cx="760" cy="20" r="10" fill="#c41e1e"></circle><circle cx="760" cy="20" r="6" fill="#e02020"></circle><circle cx="760" cy="20" r="2.5" fill="#ffd080"></circle><ellipse cx="751" cy="14" rx="6.5" ry="4.5" fill="#c41e1e" transform="rotate(25,751,14)"></ellipse><ellipse cx="769" cy="14" rx="6.5" ry="4.5" fill="#c41e1e" transform="rotate(-25,769,14)"></ellipse></g>
+      <g opacity="0.82"><circle cx="717" cy="34" r="8" fill="#c41e1e"></circle><circle cx="717" cy="34" r="4.5" fill="#e02020"></circle><circle cx="717" cy="34" r="2" fill="#ffd080"></circle></g>
+      <circle cx="862" cy="52" r="5.5" fill="#c41e1e" opacity="0.68"></circle>
+      <circle cx="822" cy="44" r="4.5" fill="#c41e1e" opacity="0.62"></circle>
+      <circle cx="742" cy="42" r="4" fill="#c41e1e" opacity="0.6"></circle>
+
+      <!-- CENTER small blooms -->
+      <g opacity="0.5"><circle cx="420" cy="18" r="7" fill="#c41e1e"></circle><circle cx="420" cy="18" r="3.5" fill="#e02020"></circle><circle cx="420" cy="18" r="1.5" fill="#ffd080"></circle></g>
+      <g opacity="0.45"><circle cx="448" cy="28" r="5" fill="#c41e1e"></circle><circle cx="448" cy="28" r="2.5" fill="#e02020"></circle></g>
+      <g opacity="0.45"><circle cx="392" cy="28" r="5" fill="#c41e1e"></circle><circle cx="392" cy="28" r="2.5" fill="#e02020"></circle></g>
+
+      <!-- LEAVES -->
+      <path d="M44 28 Q52 18 62 24 Q56 30 44 28Z" fill="#2d5a1a" opacity="0.68"></path>
+      <path d="M84 20 Q93 10 102 16 Q96 22 84 20Z" fill="#2d5a1a" opacity="0.62"></path>
+      <path d="M122 16 Q132 7 140 13 Q134 19 122 16Z" fill="#2d5a1a" opacity="0.62"></path>
+      <path d="M162 26 Q170 17 178 23 Q172 29 162 26Z" fill="#2d5a1a" opacity="0.58"></path>
+      <path d="M856 28 Q848 18 838 24 Q844 30 856 28Z" fill="#2d5a1a" opacity="0.68"></path>
+      <path d="M816 20 Q807 10 798 16 Q804 22 816 20Z" fill="#2d5a1a" opacity="0.62"></path>
+      <path d="M778 16 Q768 7 760 13 Q766 19 778 16Z" fill="#2d5a1a" opacity="0.62"></path>
+      <path d="M738 26 Q730 17 722 23 Q728 29 738 26Z" fill="#2d5a1a" opacity="0.58"></path>
+    </svg>
+  </div>
+
+  <!-- BOTTOM FLORALS -->
+  <div class="floral-bottom">
+    <svg width="100%" height="90" viewBox="0 0 900 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 52 Q35 72 80 62 Q115 54 160 72 Q195 84 240 72" stroke="#5a1a0a" stroke-width="1.5" fill="none"></path>
+      <path d="M900 52 Q865 72 820 62 Q785 54 740 72 Q705 84 660 72" stroke="#5a1a0a" stroke-width="1.5" fill="none"></path>
+      <g opacity="0.9"><circle cx="18" cy="65" r="11" fill="#c41e1e"></circle><circle cx="18" cy="65" r="6.5" fill="#e02020"></circle><circle cx="18" cy="65" r="2.8" fill="#ffd080"></circle><ellipse cx="9" cy="59" rx="7" ry="4.5" fill="#c41e1e" transform="rotate(25,9,59)"></ellipse><ellipse cx="27" cy="59" rx="7" ry="4.5" fill="#c41e1e" transform="rotate(-25,27,59)"></ellipse></g>
+      <g opacity="0.86"><circle cx="68" cy="75" r="9.5" fill="#c41e1e"></circle><circle cx="68" cy="75" r="5.5" fill="#e02020"></circle><circle cx="68" cy="75" r="2.3" fill="#ffd080"></circle></g>
+      <g opacity="0.8"><circle cx="118" cy="68" r="8.5" fill="#c41e1e"></circle><circle cx="118" cy="68" r="5" fill="#e02020"></circle></g>
+      <g opacity="0.74"><circle cx="166" cy="78" r="7" fill="#c41e1e"></circle><circle cx="166" cy="78" r="3.8" fill="#e02020"></circle></g>
+      <g opacity="0.9"><circle cx="882" cy="65" r="11" fill="#c41e1e"></circle><circle cx="882" cy="65" r="6.5" fill="#e02020"></circle><circle cx="882" cy="65" r="2.8" fill="#ffd080"></circle><ellipse cx="873" cy="59" rx="7" ry="4.5" fill="#c41e1e" transform="rotate(-25,873,59)"></ellipse><ellipse cx="891" cy="59" rx="7" ry="4.5" fill="#c41e1e" transform="rotate(25,891,59)"></ellipse></g>
+      <g opacity="0.86"><circle cx="832" cy="75" r="9.5" fill="#c41e1e"></circle><circle cx="832" cy="75" r="5.5" fill="#e02020"></circle><circle cx="832" cy="75" r="2.3" fill="#ffd080"></circle></g>
+      <g opacity="0.8"><circle cx="782" cy="68" r="8.5" fill="#c41e1e"></circle><circle cx="782" cy="68" r="5" fill="#e02020"></circle></g>
+      <g opacity="0.74"><circle cx="734" cy="78" r="7" fill="#c41e1e"></circle><circle cx="734" cy="78" r="3.8" fill="#e02020"></circle></g>
+      <path d="M36 58 Q45 48 54 54 Q48 60 36 58Z" fill="#2d5a1a" opacity="0.62"></path>
+      <path d="M88 68 Q97 58 106 64 Q100 70 88 68Z" fill="#2d5a1a" opacity="0.58"></path>
+      <path d="M864 58 Q855 48 846 54 Q852 60 864 58Z" fill="#2d5a1a" opacity="0.62"></path>
+      <path d="M812 68 Q803 58 794 64 Q800 70 812 68Z" fill="#2d5a1a" opacity="0.58"></path>
+    </svg>
+  </div>
+
+  <!-- TWO PANELS -->
+  <div class="panels">
+
+    <!-- ── LEFT PANEL: Rukhsati ── -->
+    <div class="panel">
+      <p class="rukhsati-title">Rukhsati</p>
+      <p class="rukhsati-name">Dr. Saleha Usman</p>
+      <p class="programme-text">Programme "InSha Allah"</p>
+
+      <div class="sched-grid">
+        <div class="sched-cell br bb">
+          <span class="sched-day">Friday</span>
+          <span class="sched-num">17<sup>th</sup></span>
+          <span class="sched-month">April 2026</span>
+        </div>
+        <div class="sched-cell bb">
+          <span class="sched-event">Arrival Of Barat</span>
+          <span class="sched-time">02:00 PM</span>
+        </div>
+        <div class="sched-cell br">
+          <span class="sched-event">Lunch</span>
+          <span class="sched-time">03:00 PM</span>
+        </div>
+        <div class="sched-cell">
+          <span class="sched-event">Rukhsati</span>
+          <span class="sched-time">04:00 PM</span>
+        </div>
+      </div>
+
+      <div class="gold-divider"><div class="gold-divider-line"></div><div class="gold-divider-diamond"></div><div class="gold-divider-line"></div></div>
+
+      <p class="venue-label">Venue</p>
+      <p class="venue-name">Lavista Event Complex</p>
+      <p class="venue-addr">Main Bosan Road, Near Buch Villas<br>Opp; Attock Petrol Pump, Multan<br>(Toll Plaza Sham kot Khanewal)</p>
+
+    </div>
+
+    <!-- ── CENTER DIVIDER ── -->
+    <div class="center-divider"></div>
+
+    <!-- ── RIGHT PANEL: Main Invitation ── -->
+    <div class="panel">
+      <div class="bismillah">﷽</div>
+      <p class="host-line">Mr. &amp; Mrs. Ch. Muhammad Usman Mayo</p>
+      <p class="host-sub">(Advocate High Court)</p>
+      <p class="invite-body">Would be delighted to have your gracious presence at the</p>
+      <p class="section-title">Wedding Ceremony</p>
+      <p class="invite-body" style="margin-bottom:3px">of our beloved daughter</p>
+      <p class="script-name">Dr. Saleha Usman</p>
+      <p class="with-word">With</p>
+      <p class="rank-line">Flying Officer</p>
+      <p class="script-name">Hafiz M. Abdullah Imran</p>
+
+      <div class="gold-divider" style="margin:10px 0 7px"><div class="gold-divider-line"></div><div class="gold-divider-diamond"></div><div class="gold-divider-line"></div></div>
+
+      <div class="footer-grid">
+        <div class="footer-col">
+          <span class="footer-label">Looking Forward</span>
+          <span class="footer-name">Mr. &amp; Mrs. Ch. M. Usman Mayo</span>
+          <span class="footer-name">M. Umair Usman</span>
+          <span class="footer-name">M. Taimoor Usman</span>
+          <span class="footer-name">Hafiz M. Umer Usman</span>
+          <span class="footer-name" style="margin-top:2px">Advocate High Court</span>
+        </div>
+        <div class="footer-col center-col">
+          <span class="footer-label">Contact</span>
+          <span class="footer-phone">0300-7319957</span>
+          <span class="footer-phone">0303-9183390</span>
+          <span class="footer-phone">0307-7803938</span>
+        </div>
+        <div class="footer-col right">
+          <span class="footer-label">R.S.V.P.</span>
+          <span class="footer-name">All Family Members</span>
+          <span class="footer-name">Relatives &amp; Friends</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /panels -->
+
+</div><!-- /card-wrap -->
+
+<div class="save-bar">
+  <button class="save-btn" onclick="saveAsImage()">⬇ Save as Image</button>
+</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+function saveAsImage() {
+  const btn = document.querySelector('.save-btn');
+  btn.textContent = 'Saving...';
+  btn.disabled = true;
+  html2canvas(document.getElementById('theCard'), {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: '#faf6ef',
+    logging: false
+  }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = 'Saleha_Wedding_Invitation.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    btn.textContent = '⬇ Save as Image';
+    btn.disabled = false;
+  });
+}
+</script>
+
+
+</body></html>
