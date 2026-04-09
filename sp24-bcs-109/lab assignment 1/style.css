@@ -1,3 +1,11 @@
+* {
+    box-sizing: border-box;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
 body{
     margin-left: 0;
     padding-top: 1px;
@@ -301,22 +309,21 @@ body{
     gap:8px;
     align-items: stretch;
     margin-top:10px;
-    padding-left:8px;
-    padding-right:8px;
+    padding: 0 10px;
 }
 /* Image Section with Overlay */
 .img102 {
     position: relative;
     width: 50%;
-    margin-left: 5px;
     overflow: hidden;
-    
+    border-radius: 20px;
+    display: flex;
 }
 
 .img102 img {
     border-radius: 20px;
     width: 100%;
-    height: 550px;  
+    height: 100%;  
     display: block;
     object-fit: cover; /* ensures image covers the area nicely */
     
@@ -355,29 +362,22 @@ body{
     background-color: white;
     color: black;
     font-family: 'Geograph', system-ui, sans-serif;
-    font-weight: 500;
-    font-size: 0.75rem;
-    padding: 0.5rem 1rem ;
-    border-radius: 9999px; /* pill-shaped */
+    font-weight: 600;
+    font-size: 12px;
+    padding: 10px 22px;
+    border-radius: 50px; /* pill-shaped */
     text-transform: uppercase;
     text-decoration: none;
-    display: inline-flex;
+    z-index: 10;
+    white-space: nowrap;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
 }
 
 .shop-now-btn:hover {
     background-color: black;
     color: white;
-}
-@media (max-width: 768px) {
-    .shop-now-btn {
-        top: 10px;
-        right: 10px;
-        font-size: 0.65rem;
-        padding: 0.4rem 0.8rem;
-    }
 }
 /* Right Side Grid */
 .right-products {
@@ -388,7 +388,7 @@ body{
 }
 
 /* Product Card */
-.product-card {
+/*.product-card {
     background: #ffffff;
     border-radius: 18px;
     padding: 20px;
@@ -398,8 +398,19 @@ body{
     display:flex;
     flex-direction:column;
     justify-content:space-between;
+}*/
+.product-card {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 15px;
+    position: relative;
+    transition: 0.3s ease;
+    height: auto; /* Increased height so elements don't crash */
+    min-height: 250px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
-
 
 /* NEW badge */
 .badge {
@@ -422,12 +433,17 @@ body{
 }
 
 /* Product Info */
-.product-top {
+/*.product-top {
     display:flex;
     justify-content:space-between;
     margin-top:-10px;
+}*/
+.product-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 5px;
 }
-
 .product-top h4 {
     font-size: 12px;
     font-weight: 600;
@@ -458,7 +474,7 @@ body{
 }
 
 /* Add Button */
-.add-btn {
+/*.add-btn {
     border: 1px solid #000;
     background: transparent;
     padding: 6px 14px;
@@ -469,6 +485,21 @@ body{
     position: absolute;
     bottom: 15px;
     right: 15px;
+}*/
+.add-btn {
+    border: 1px solid #000;
+    background: #fff;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    position: absolute; /* Keep it absolute but ensure card has height */
+    bottom: 15px;
+    right: 15px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
 }
 .add-btn:hover{
     background-color: black;
@@ -869,4 +900,107 @@ body{
 
 .footer-bar a:hover {
     color: #aaa;
+}
+/* --- Responsive Styles for Mobile (Max-width: 768px) --- */
+@media (max-width: 768px) {
+    
+    /* 1. Navbar: Hide non-essential links to save space */
+    .nav-center, .nav-right a:not(.logo) {
+        display: none; 
+    }
+    .navbar {
+        max-width: 95%;
+        padding: 10px 15px;
+    }
+
+    /* 2. Hero Section: Remove fixed widths */
+    .hero {
+        height: auto;
+    }
+    .hero-image {
+        width: 100% !important;
+        margin-top: 50px; /* Space for fixed navbar */
+        border-radius: 0;
+    }
+
+    /* 3. Shoe Grid: Stack horizontally aligned cards vertically */
+    .shoes {
+        flex-direction: column;
+        align-items: center;
+        padding: 0 15px;
+    }
+    .shoe-card {
+        width: 100% !important;
+        margin-bottom: 20px;
+    }
+
+    /* 4. Product Sections: Change 50/50 split to 100% stack */
+    .new-arrivals-section {
+        flex-direction: column;
+    }
+    .img102, .right-products, .woman3img-section, .man2img-section {
+        width: 100% !important;
+        margin-left: 0 !important;
+    }
+    .img102 img {
+        height: 450px; /* Give it a fixed height on mobile */
+    }
+    /* Change 2-column grid to 1-column */
+    .right-products {
+        grid-template-columns: 1fr;
+    }
+    .shop-now-btn {
+        bottom: 20px;
+        right: 20px;
+        font-size: 10px;
+        padding: 8px 16px;
+        top: auto;
+    }
+    .simple-text {
+        font-size: 1.8rem;
+    }
+
+    /* 5. Collection Cards (3-column to 1-column stack) */
+    .new-arrivals-section2 {
+        flex-direction: column;
+        align-items: center;
+    }
+    .new-arrivals-section2 > div {
+        width: 95%;
+        margin-bottom: 20px;
+    }
+    .simple-text7 {
+        font-size: 28px; /* Shrink large text */
+        margin-bottom: 150px;
+    }
+
+    /* 6. Features Strip: Stack cards */
+    .features-strip {
+        flex-direction: column;
+    }
+    .feature-card {
+        margin-bottom: 10px;
+    }
+
+    /* 7. Footer: Stack columns and email form */
+    .footer {
+        padding: 40px 20px;
+    }
+    .footer-top {
+        flex-direction: column;
+        gap: 40px;
+    }
+    .footer-email {
+        min-width: 100%;
+    }
+    .footer-links {
+        flex-direction: column;
+        gap: 30px;
+        justify-content: flex-start;
+    }
+    .footer-bar {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
 }
