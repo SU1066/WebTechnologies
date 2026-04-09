@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>
         Allbirds:Comfortable, Sustainable Shoes & Apparel
     </title>
@@ -8,15 +9,32 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
     integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" 
     crossorigin="anonymous" referrerpolicy="no-referrer" />
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
     <header class="navbar-wrapper">
+        <!-- Mobile Drawer Menu -->
+    <div class="mobile-drawer" id="mobile-drawer">
+        <div class="drawer-links">
+            <a href="#">MEN <i class="fa-solid fa-chevron-right"></i></a>
+            <a href="#">WOMEN <i class="fa-solid fa-chevron-right"></i></a>
+            <a href="#">SALE <i class="fa-solid fa-chevron-right"></i></a>
+        </div>
+        <div class="drawer-footer">
+            <a href="#">About</a>
+            <a href="#">ReRun</a>
+            <a href="#">Store Locator</a>
+        </div>
+    </div>
     <div class="navbar">
 
         <!-- Left Logo -->
         <div class="nav-left">
         <a href="#" class="logo">allbirds</a>
+        </div>
+
+        <div class="hamburger" id="hamburger-toggle">
+                <i class="fa-solid fa-bars" id="menu-icon"></i>
         </div>
 
         <!-- Center Menu -->
@@ -54,11 +72,11 @@
         Free Shipping on Orders over $75.Easy Returns.
     </div>
     <div class="hero">
-    <img src="images/topmostpic.jpg" class="hero-image">
+    <img src="images/topmostpic.jpg" alt="Allbirds hero image showcasing comfortable shoes" class="hero-image">
     </div>
     <div class="shoes">
         <div class="shoe-card">
-            <img src="images/shoe1.jpg">
+            <img src="images/shoe1.jpg" alt="New arrivals shoe">
             <div class="overlay-content">
                 <div class="shoe-text">NEW ARRIVALS</div>
                 <button class="shoe-btn">SHOP MEN</button>
@@ -67,7 +85,7 @@
         </div>
 
         <div class="shoe-card">
-            <img src="images/shoe2.jpg">
+            <img src="images/shoe2.jpg" alt="Men's shoe">
             <div class="overlay-content">
                 <div class="shoe-text">MEN</div>
                 <button class="shoe-btn">SHOP MEN</button>
@@ -75,7 +93,7 @@
         </div>
 
         <div class="shoe-card">
-            <img src="images/shoe3.jpg">
+            <img src="images/shoe3.jpg" alt="Women's shoe">
             <div class="overlay-content">
                 <div class="shoe-text">WOMEN</div>
                 <button class="shoe-btn">SHOP WOMEN</button>
@@ -83,7 +101,7 @@
         </div>
 
         <div class="shoe-card">
-            <img src="images/shoe4.jpg">
+            <img src="images/shoe4.jpg" alt="Best sellers shoe">
             <div class="overlay-content">
                 <div class="shoe-text">BEST SELLERS</div>
                 <button class="shoe-btn">SHOP MEN</button>
@@ -103,7 +121,7 @@
     </div>
     <div class="new-arrivals-section">
         <div class = "img102">
-            <img src="images/img102.jpg">
+            <img src="images/img102.jpg" alt="Men's new arrivals">
             <div class="overlay-content2">
                     <div class="simple-text">Men's New Arrivals</div>
                     <div class="simple-text2">Warm,refined,and widly comfortable. </div>
@@ -115,7 +133,7 @@
         <!-- CARD 1 -->
             <div class="product-card">
                 <div class="badge">NEW</div>
-                <img src="images/noback1.png" class="product-img">
+                <img src="images/noback1.png" alt="Varsity shoe" class="product-img">
 
                 <div class="product-info">
                     <div class="product-top">
@@ -139,7 +157,7 @@
             <!-- CARD 2 -->
             <div class="product-card">
                 <div class="badge">NEW</div>
-                <img src="images/noback2.png" class="product-img">
+                <img src="images/noback2.png" alt="Varsity Terralux shoe" class="product-img">
 
                 <div class="product-info">
                     <div class="product-top">
@@ -161,7 +179,7 @@
             <!-- CARD 3 -->
             <div class="product-card">
                 <div class="badge">NEW</div>
-                <img src="images/noback3.png" class="product-img">
+                <img src="images/noback3.png" alt="Dasher NZ shoe" class="product-img">
 
                 <div class="product-info">
                     <div class="product-top">
@@ -184,7 +202,7 @@
             <!-- CARD 4 -->
             <div class="product-card">
                 <div class="badge">NEW</div>
-                <img src="images/noback4.png" class="product-img">
+                <img src="images/noback4.png" alt="Varsity Cruiser shoe" class="product-img">
 
                 <div class="product-info">
                     <div class="product-top">
@@ -209,7 +227,7 @@
         <!-- CARD 1 -->
         <div class="product-card">
             <div class="badge">NEW</div>
-            <img src="images/noback5.png" class="product-img">
+            <img src="images/noback5.png" alt="Varsity shoe" class="product-img">
 
             <div class="product-info">
                  <div class="product-top">
@@ -233,7 +251,7 @@
             <!-- CARD 2 -->
             <div class="product-card">
                 <div class="badge">NEW</div>
-                <img src="images/noback6.png" class="product-img">
+                <img src="images/noback6.png" alt="Varsity Terralux shoe" class="product-img">
 
                 <div class="product-info">
                     <div class="product-top">
@@ -255,7 +273,7 @@
             <!-- CARD 3 -->
             <div class="product-card">
                 <div class="badge">NEW</div>
-                <img src="images/noback7.png" class="product-img">
+                <img src="images/noback7.png" alt="Dasher NZ shoe" class="product-img">
 
                 <div class="product-info">
                     <div class="product-top">
@@ -278,7 +296,7 @@
             <!-- CARD 4 -->
             <div class="product-card">
                 <div class="badge">NEW</div>
-                <img src="images/noback8.png" class="product-img">
+                <img src="images/noback8.png" alt="Varsity Cruiser shoe" class="product-img">
 
                 <div class="product-info">
                     <div class="product-top">
@@ -298,7 +316,7 @@
             </div>
         </div>
         <div class = "img102">
-            <img src="images/img103.jpg">
+            <img src="images/img103.jpg" alt="Women's new arrivals">
             <div class="overlay-content2">
                     <div class="simple-text">Women's New Arrivals</div>
                     <div class="simple-text2">Start the season with style, comfort, and versatility. </div>
@@ -332,9 +350,9 @@
     </div>
     <div class="new-arrivals-section">
         <div class="woman3img-section">
-            <img src="images/woman3img.jpg">
-            <button class="quick-view-btn">
-                <i class="fa-solid fa-bag-shopping" style="color: rgb(119, 122, 128);"></i>
+            <img src="images/woman3img.jpg" alt="Naturally easy shoe">
+            <button class="quick-view-btn" aria-label="Quick view">
+                <i class="fa-solid fa-bag-shopping quick-view-icon"></i>
             </button>
             <div class="simple-text3">NATURALLY EASY</div>
             <div class="simple-text4">Classic sport style, reimagined to feel lighter, cooler, 
@@ -342,9 +360,9 @@
          
         </div>   
         <div class="man2img-section">
-            <img src="images/man2img.jpg">
-            <button class="quick-view-btn">
-                <i class="fa-solid fa-bag-shopping" style="color: rgb(119, 122, 128);"></i>
+            <img src="images/man2img.jpg" alt="Light on your feet shoe">
+            <button class="quick-view-btn" aria-label="Quick view">
+                <i class="fa-solid fa-bag-shopping quick-view-icon"></i>
             </button>
             <div class="simple-text5">LIGHT ON YOUR FEET</div>
             <div class="simple-text6">Breathable tree-fiber uppers keep things cool and
@@ -355,7 +373,7 @@
     <div class="new-arrivals-section2">
 
         <div class="card">
-            <img src="images/woman2img.jpg">
+            <img src="images/woman2img.jpg" alt="Dasher NZ collection">
             <div class="overlay-content3">
                 <div class="simple-text7">Dasher NZ Collection</div>
 
@@ -367,7 +385,7 @@
         </div>
 
         <div class="card">
-            <img src="images/img104.jpg">
+            <img src="images/img104.jpg" alt="Varsity collection">
             <div class="overlay-content3">
                 <div class="simple-text7">Varsity Collection</div>
 
@@ -379,7 +397,7 @@
         </div>
 
         <div class="card">
-            <img src="images/img101.jpg">
+            <img src="images/img101.jpg" alt="Terralux collection">
             <div class="overlay-content3">
                 <div class="simple-text7">Terralux™ Collection</div>
 
@@ -474,12 +492,12 @@
     <div class="footer-social">
         <p class="footer-label">FOLLOW THE FLOCK</p>
         <div class="social-icons">
-            <a href="#"><i class="fa-brands fa-instagram"></i></a>
-            <a href="#"><i class="fa-brands fa-pinterest"></i></a>
-            <a href="#"><i class="fa-brands fa-facebook"></i></a>
-            <a href="#"><i class="fa-brands fa-x-twitter"></i></a>
-            <a href="#"><i class="fa-brands fa-tiktok"></i></a>
-            <a href="#"><i class="fa-brands fa-youtube"></i></a>
+            <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+            <a href="#" aria-label="Pinterest"><i class="fa-brands fa-pinterest"></i></a>
+            <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
+            <a href="#" aria-label="X (Twitter)"><i class="fa-brands fa-x-twitter"></i></a>
+            <a href="#" aria-label="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+            <a href="#" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
         </div>
     </div>
 
@@ -494,7 +512,7 @@
         </div>
         <div class="region-select">
             <span>US</span>
-            <i class="fa-solid fa-chevron-down" style="font-size:10px;"></i>
+            <i class="fa-solid fa-chevron-down region-chevron"></i>
         </div>
     </div>
 
