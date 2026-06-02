@@ -1,0 +1,13 @@
+{
+  "name": "allbirds-clone-website",
+  "version": "1.0.0",
+  "description": "A local clone of the Allbirds website using Express, EJS, and MongoDB.",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "ejs": "^5.0.2",
+    "express": "^5.2.1",
+    "mongoose": "^9.6.2"
+  }
+}
