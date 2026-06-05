@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Allbirds Admin Login</title>
+
+    <link rel="stylesheet" href="/admin.css">
+</head>
+<body>
+
+<div class="login-page">
+
+    <div class="login-card">
+
+        <div class="login-logo">
+            allbirds
+        </div>
+
+        <h1>Admin Portal</h1>
+
+        <p>
+            Sign in to manage products, inventory and store content.
+        </p>
+
+        <form action="/admin/login" method="POST">
+
+            <div class="input-group">
+                <label>Email Address</label>
+                <input
+                    type="email"
+                    name="email"
+                    placeholder="admin@allbirds.com"
+                    required>
+            </div>
+
+            <div class="input-group">
+                <label>Password</label>
+                <input
+                    type="password"
+                    name="password"
+                    placeholder="Enter password"
+                    required>
+            </div>
+
+            <button type="submit" class="login-btn">
+                Sign In
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+</body>
+</html>

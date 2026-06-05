@@ -1,0 +1,442 @@
+
+body{
+    margin:0;
+    font-family: Times New Roman, serif;
+    background:#f8f8f8;
+}
+.admin-link,
+.admin-link:visited {
+    color: black !important;
+    text-decoration: none !important;
+}
+.admin-link:hover {
+    text-decoration: none;
+    color: black;
+}
+.admin-header{
+    background:black;
+    color:white;
+    padding:20px 40px;
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+.admin-logo{
+    font-family: 'Baguet Script';
+    font-style: italic;
+    font-size: 28px;
+    font-weight: 600;
+    text-decoration: none;
+    color: #ffffff;
+}
+.admin-header h1{
+    margin:0;
+    letter-spacing:2px;
+}
+
+.admin-nav a{
+    color:white;
+    text-decoration:none;
+    margin-left:20px;
+    font-weight:bold;
+}
+
+.admin-container{
+    padding:40px;
+}
+
+.admin-card{
+    background:white;
+    padding:25px;
+    border-radius:12px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+}
+.form-logo{
+    font-family: 'Baguet Script';
+    font-style: italic;
+    font-size: 28px;
+    font-weight: 600;
+    color: #212121;
+    text-align: center;
+    margin-bottom: 20px;
+}
+.admin-table{
+    width:100%;
+    border-collapse:collapse;
+    table-layout:fixed;
+}
+/* Header */
+.admin-table thead th{
+    background:#ffffff;
+    color:#111;
+    font-size:18px;
+    font-weight:500;
+    text-transform:none;
+    letter-spacing:0;
+    padding:20px 10px 30px;
+    border-bottom:2px solid #e5e5e5;
+}
+
+/* Align each heading above its column */
+.admin-table thead th:nth-child(1){
+    width:140px;
+    text-align:center;
+}
+
+.admin-table thead th:nth-child(2){
+    width:35%;
+    text-align:left;
+}
+
+.admin-table thead th:nth-child(3){
+    width:120px;
+    text-align:center;
+}
+
+.admin-table thead th:nth-child(4){
+    width:120px;
+    text-align:center;
+}
+
+.admin-table thead th:nth-child(5){
+    width:150px;
+    text-align:center;
+}
+
+.admin-table thead th:nth-child(6){
+    width:220px;
+    text-align:center;
+}
+
+/* Body */
+.admin-table tbody td{
+    padding:18px 10px;
+    border-bottom:1px solid #eeeeee;
+    vertical-align:middle;
+}
+
+/* Image column */
+.admin-table td:first-child{
+    text-align:center;
+}
+
+.product-image img,
+img.product-image{
+    width:80px;
+    height:80px;
+    object-fit:contain;
+    border-radius:12px;
+    
+}
+
+/* Name column */
+.product-name{
+    text-align:left;
+    font-size:18px;
+    font-weight:500;
+    color:#222;
+}
+/* Stock */
+.product-stock{
+    text-align:center;
+    font-size:17px;
+}
+
+/* Category */
+.category-badge{
+    display:inline-block;
+    padding:8px 16px;
+    border-radius:999px;
+    background:#f2f2f2;
+    font-size:14px;
+    color:#444;
+}
+
+/* Actions */
+.product-actions{
+    text-align:center;
+    white-space:nowrap;
+}
+
+/* Edit button */
+.btn-edit{
+    display:inline-block;
+    padding:10px 18px;
+    border-radius:999px;
+    background:#000;
+    color:#fff;
+    text-decoration:none;
+    margin-right:8px;
+    font-size:14px;
+}
+
+/* Delete button */
+.btn-delete{
+    padding:10px 18px;
+    border:none;
+    border-radius:999px;
+    background:#351313;
+    color:#fff;
+    cursor:pointer;
+    font-size:14px;
+}
+
+/* Row hover */
+.admin-table tbody tr:hover{
+    background:#fafafa;
+}
+.btn{
+    padding:10px 18px;
+    border:none;
+    border-radius:25px;
+    cursor:pointer;
+    text-decoration:none;
+}
+
+.btn-add{
+    background:rgb(0, 0, 0);
+    color:rgb(255, 255, 255);
+}
+
+.btn-edit{
+    background:#000000;
+    color:rgb(255, 255, 255);
+}
+
+.btn-delete{
+    background:#271313;
+    color:rgb(255, 255, 255);
+}
+input{
+    width:100%;
+    padding:12px;
+    margin-bottom:15px;
+    border-radius:8px;
+    border:1px solid #ccc;
+}
+
+form{
+    max-width:600px;
+}
+.admin-nav a.active {
+    background: #000000;
+    color: white !important;
+}
+
+.admin-nav a.active:hover {
+    color: white !important;
+}
+.product-form-wrapper{
+    max-width:1200px;
+    margin:50px auto;
+    padding:20px;
+}
+
+.product-form-card{
+    background:#ffffff;
+    border-radius:24px;
+    padding:50px;
+    box-shadow:0 8px 30px rgba(0,0,0,.06);
+}
+
+.form-header h1{
+    font-size:38px;
+    margin-bottom:10px;
+    color:#212121;
+}
+
+.form-header p{
+    color:#666;
+    margin-bottom:40px;
+}
+
+.form-grid{
+    display:grid;
+    grid-template-columns:1fr 400px;
+    gap:50px;
+}
+
+.left-column{
+    display:flex;
+    flex-direction:column;
+}
+
+.left-column label{
+    margin-bottom:8px;
+    margin-top:18px;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:2px;
+    text-transform:uppercase;
+}
+
+.left-column input,
+.left-column textarea,
+.left-column select{
+    padding:15px 20px;
+    border:1px solid #ddd;
+    border-radius:14px;
+    font-size:15px;
+    background:#fafafa;
+}
+
+.left-column input:focus{
+    outline:none;
+    border-color:black;
+}
+
+.image-upload-box{
+    height:350px;
+    border:2px dashed #d9d9d9;
+    border-radius:24px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    color:#888;
+    font-size:14px;
+    background:#fafafa;
+}
+
+.save-btn{
+    margin-top:40px;
+    border:none;
+    background:#212121;
+    color:white;
+    padding:16px 30px;
+    border-radius:999px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+}
+
+.save-btn:hover{
+    background:#000;
+}
+/* ===== LOGIN PAGE ===== */
+
+.login-page{
+    min-height:100vh;
+    background:#f5f5f3;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    padding:40px;
+}
+
+.login-card{
+    width:100%;
+    max-width:450px;
+
+    background:white;
+
+    padding:50px;
+
+    border-radius:20px;
+
+    box-shadow:
+    0 10px 30px rgba(0,0,0,0.06);
+}
+
+.login-logo{
+    font-family: 'Baguet Script';
+    font-style: italic;
+    font-size:30px;
+    font-weight:700;
+    letter-spacing:4px;
+
+    text-align:center;
+
+    margin-bottom:35px;
+
+    color:#111;
+}
+
+.login-card h1{
+    text-align:center;
+
+    font-size:38px;
+
+    margin-bottom:10px;
+
+    font-family: 'Baguet Script';
+
+    color:#111;
+}
+
+.login-card p{
+    text-align:center;
+
+    color:#666;
+
+    margin-bottom:35px;
+
+    font-size:14px;
+
+    line-height:1.6;
+}
+
+.input-group{
+    margin-bottom:22px;
+}
+
+.input-group label{
+    display:block;
+
+    margin-bottom:8px;
+
+    font-size:13px;
+
+    font-weight:600;
+
+    color:#333;
+}
+
+.input-group input{
+    width:100%;
+
+    padding:14px 18px;
+
+    border:1px solid #dcdcdc;
+
+    border-radius:12px;
+
+    font-size:14px;
+
+    outline:none;
+
+    transition:0.3s;
+}
+
+.input-group input:focus{
+    border-color:black;
+}
+
+.login-btn{
+    width:100%;
+
+    padding:15px;
+
+    border:none;
+
+    border-radius:999px;
+
+    background:black;
+
+    color:white;
+
+    font-size:14px;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:0.3s;
+}
+
+.login-btn:hover{
+    background:#333;
+    transform:translateY(-2px);
+}
