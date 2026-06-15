@@ -20,7 +20,20 @@ app.use(
         saveUninitialized: false
     })
 );
+app.use(flash());
+app.use((req, res, next) => {
 
+    res.locals.user =
+        req.session.user;
+
+    res.locals.success =
+        req.flash("success");
+
+    res.locals.error =
+        req.flash("error");
+
+    next();
+});
 const productRoutes = require("./routes/productRoutes");
 
 app.set("view engine", "ejs");
@@ -47,24 +60,10 @@ app.get("/", async (req, res) => {
         featuredProducts
     });
 });
+console.log("Test route initialized");
+
+const authRoutes = require("./routes/authRoutes");
+app.use(authRoutes);
 app.listen(3000, () => {
     console.log("Server running on port 3000");
 });
-console.log("Test route initialized");
-
-app.use(flash());
-app.use((req, res, next) => {
-
-    res.locals.user =
-        req.session.user;
-
-    res.locals.success =
-        req.flash("success");
-
-    res.locals.error =
-        req.flash("error");
-
-    next();
-});
-const authRoutes = require("./routes/authRoutes");
-app.use(authRoutes);

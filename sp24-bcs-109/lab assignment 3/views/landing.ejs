@@ -61,24 +61,6 @@
                 <i class="fa-solid fa-magnifying-glass"></i>
             </span>
 
-            <% if(!user){ %>
-
-            <a href="/login" class="nav-icon">
-                <i class="fa-regular fa-user"></i>
-            </a>
-
-            <% } else { %>
-
-            <span class="nav-user">
-                Hi, <%= user.name %>
-            </span>
-
-            <a href="/logout">
-                Logout
-            </a>
-
-            <% } %>
-
             <span class="nav-icon">
                 <i class="fa-regular fa-circle-question"></i>
             </span>
@@ -86,6 +68,40 @@
             <span class="nav-icon">
                 <i class="fa-solid fa-bag-shopping"></i>
             </span>
+
+            <% if (user) { %>
+
+                <div class="user-menu">
+
+                    <span class="user-name" id="userToggle">
+                        <%= user.name.split(" ")[0] %>
+                    </span>
+
+                    <div class="user-dropdown" id="userDropdown">
+
+                        <div class="user-info">
+                            <strong><%= user.name %></strong>
+                            <p><%= user.email %></p>
+                        </div>
+
+                        <a href="/logout" class="logout-btn">
+                            Logout
+                        </a>
+
+                    </div>
+
+                </div>
+
+            <% } else { %>
+
+                <span class="nav-icon">
+                    <a href="/login">
+                        <i class="fa-regular fa-user"></i>
+                    </a>
+                </span>
+
+            <% } %>
+        
         </div>
         <nav>
             <a href="/admin" class="admin-link">Admin</a>
@@ -578,5 +594,32 @@
         <a href="#">California Transparency</a>
     </div>
 </footer>
+<script>
+
+const userToggle =
+    document.getElementById("userToggle");
+
+const userDropdown =
+    document.getElementById("userDropdown");
+
+if (userToggle && userDropdown) {
+
+    userToggle.addEventListener("click", function (e) {
+
+        e.stopPropagation();
+
+        userDropdown.classList.toggle("show");
+
+    });
+
+    document.addEventListener("click", function () {
+
+        userDropdown.classList.remove("show");
+
+    });
+
+}
+
+</script>
 </body>
 </html>

@@ -9,109 +9,64 @@ exports.loginPage = (req, res) => {
 
     res.render("auth/login");
 };
-exports.registerUser = async (req,res)=>{
+exports.registerUser = async (req, res) => {
 
-    try{
+    const { name, email, password } = req.body;
 
-        const {
-            name,
-            email,
-            password
-        } = req.body;
+    const existingUser =
+        await User.findOne({ email });
 
-        const existingUser =
-            await User.findOne({email});
-
-        if(existingUser){
-
-            req.flash(
-                "error",
-                "Email already exists"
-            );
-
-            return res.redirect("/register");
-        }
-
-        await User.create({
-
-            name,
-            email,
-            password
-
-        });
+    if (existingUser) {
 
         req.flash(
-            "success",
-            "Account created successfully"
+            "error",
+            "Email already exists"
         );
 
-        res.redirect("/login");
-
+        return res.redirect("/register");
     }
 
-    catch(err){
+    await User.create({
+        name,
+        email,
+        password
+    });
 
-        console.log(err);
+    req.flash(
+        "success",
+        "Account created successfully. Please login."
+    );
 
-        res.redirect("/register");
-    }
+    res.redirect("/login");
 };
-exports.loginUser = async (req,res)=>{
+exports.loginUser = async (req, res) => {
 
-    try{
+    const { email, password } = req.body;
 
-        const {
-            email,
-            password
-        } = req.body;
+    const user =
+        await User.findOne({ email });
 
-        const user =
-            await User.findOne({email});
+    if (
+        !user ||
+        !(await user.comparePassword(password))
+    ) {
 
-        if(!user){
+        req.flash(
+            "error",
+            "Invalid email or password"
+        );
 
-            req.flash(
-                "error",
-                "Invalid credentials"
-            );
-
-            return res.redirect("/login");
-        }
-
-        const match =
-            await user.comparePassword(
-                password
-            );
-
-        if(!match){
-
-            req.flash(
-                "error",
-                "Invalid credentials"
-            );
-
-            return res.redirect("/login");
-        }
-
-        req.session.user = {
-
-            id: user._id,
-            name: user.name,
-            email: user.email,
-            role: user.role
-
-        };
-
-        res.redirect("/");
-
+        return res.redirect("/login");
     }
 
-    catch(err){
+    req.session.user = {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+    };
 
-        console.log(err);
-
-        res.redirect("/login");
-    }
+    res.redirect("/");
 };
 exports.logoutUser = (req, res) => {
 
