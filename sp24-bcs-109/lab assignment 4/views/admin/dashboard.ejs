@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/admin.css">
+</head>
+
+<body class="admin-body">
+
+<header class="admin-header">
+
+    <h1 class="admin-logo">allbirds Admin</h1>
+
+    <nav class="admin-nav">
+        <a href="/">Home</a>
+        <a href="/admin" class="active">Dashboard</a>
+        <a href="/admin/add" class="admin-add-btn">Add Product</a>
+    </nav>
+
+</header>
+
+<div class="admin-container">
+
+    <div class="admin-card">
+
+        <div class="table-header">
+            <h2>Products</h2>
+        </div>
+
+        <table class="admin-table">
+
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Category</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+            <% products.forEach(product => { %>
+            <tr>
+
+                <td class="product-image">
+                    <img src="<%= product.image %>" class="product-image">
+                </td>
+
+                <td class="product-name"><%= product.name %></td>
+                <td class="product-price">$<%= product.price %></td>
+                <td class="product-stock"><%= product.stock %></td>
+                <td>
+                    <span class="category-badge"><%= product.category %></span>
+                </td>
+
+                <td class="product-actions">
+
+                    <a href="/admin/edit/<%= product._id %>" class="btn-edit">Edit</a>
+
+                    <form action="/admin/delete/<%= product._id %>" method="POST" style="display:inline"
+                        onsubmit="return confirm('Delete this product?')">
+
+                        <button class="btn-delete">Delete</button>
+
+                    </form>
+
+                </td>
+
+            </tr>
+            <% }) %>
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+</body>
+</html>
