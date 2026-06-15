@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Product</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/admin.css">
+</head>
+<body>
+
+    <div class="product-form-wrapper">
+
+    <div class="form-logo">
+        allbirds
+    </div>
+    
+    <div class="product-form-card">
+
+        <div class="form-header">
+            <h1>Add Product</h1>
+            <p>Create a new product for your store</p>
+        </div>
+
+        <form
+            action="/admin/add"
+            method="POST"
+            enctype="multipart/form-data">
+
+            <div class="form-grid">
+
+                <div class="left-column">
+
+                    <label>Product Name</label>
+                    <input
+                        type="text"
+                        name="name"
+                        required>
+
+                    <label>Price</label>
+                    <input
+                        type="number"
+                        name="price"
+                        required>
+
+                    <label>Stock</label>
+                    <input
+                        type="number"
+                        name="stock">
+
+                    <label>Category</label>
+                    <input
+                        type="text"
+                        name="category"
+                        required>
+
+                    <label>Rating</label>
+                    <input
+                        type="number"
+                        name="rating"
+                        min="0"
+                        max="5">
+
+                </div>
+
+                <div class="right-column">
+
+                    <label>Product Image</label>
+
+                    <div class="image-upload-box">
+                        <input
+                            type="file"
+                            name="image"
+                            accept="image/*"
+                            required>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <button
+                type="submit"
+                class="save-btn">
+                Save Product
+            </button>
+
+        </form>
+    </div>
+
+</div>
+
+</body>
+</html>
