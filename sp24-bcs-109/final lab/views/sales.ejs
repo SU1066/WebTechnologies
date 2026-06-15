@@ -1,0 +1,136 @@
+<div class="admin-container sales-dashboard">
+    <div class="sales-heading">
+        <div>
+            <h2>Sales Dashboard</h2>
+            <p>Live store performance, refreshed every 10 seconds.</p>
+        </div>
+        <span id="sales-updated-at" class="sales-updated">Loading latest data...</span>
+    </div>
+
+    <div class="sales-metrics">
+        <div class="sales-card">
+            <span>Total Revenue</span>
+            <strong id="total-revenue">$<%= Number(salesData.totalRevenue).toLocaleString() %></strong>
+        </div>
+
+        <div class="sales-card">
+            <span>Total Orders</span>
+            <strong id="total-orders"><%= salesData.totalOrders %></strong>
+        </div>
+
+        <div class="sales-card">
+            <span>Top-Selling Product</span>
+            <strong id="top-product-name">
+                <%= salesData.topProduct ? salesData.topProduct.name : "No sales yet" %>
+            </strong>
+            <small id="top-product-detail">
+                <% if (salesData.topProduct) { %>
+                    <%= salesData.topProduct.quantitySold %> sold
+                <% } else { %>
+                    Waiting for orders
+                <% } %>
+            </small>
+        </div>
+    </div>
+
+    <div class="admin-card sales-table-card">
+        <div class="table-header">
+            <h2>Recent Transactions</h2>
+        </div>
+
+        <table class="admin-table sales-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Items</th>
+                    <th>Status</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody id="recent-transactions">
+                <% if (salesData.recentTransactions.length) { %>
+                    <% salesData.recentTransactions.forEach(order => { %>
+                        <tr>
+                            <td><%= new Date(order.createdAt).toLocaleString() %></td>
+                            <td><%= order.items.map(item => `${item.name} x${item.quantity}`).join(", ") %></td>
+                            <td><span class="category-badge"><%= order.status %></span></td>
+                            <td>$<%= Number(order.totalAmount).toLocaleString() %></td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="4" class="empty-sales">No transactions yet</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+    $(function () {
+        const currencyFormatter = new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: "USD",
+            maximumFractionDigits: 0
+        });
+
+        const formatDate = function (dateValue) {
+            return new Date(dateValue).toLocaleString();
+        };
+
+        const renderTransactions = function (transactions) {
+            if (!transactions.length) {
+                $("#recent-transactions").html(
+                    '<tr><td colspan="4" class="empty-sales">No transactions yet</td></tr>'
+                );
+                return;
+            }
+
+            const rows = transactions.map(function (order) {
+                const itemText = order.items
+                    .map(function (item) {
+                        return item.name + " x" + item.quantity;
+                    })
+                    .join(", ");
+
+                return `
+                    <tr>
+                        <td>${formatDate(order.createdAt)}</td>
+                        <td>${itemText}</td>
+                        <td><span class="category-badge">${order.status}</span></td>
+                        <td>${currencyFormatter.format(order.totalAmount)}</td>
+                    </tr>
+                `;
+            });
+
+            $("#recent-transactions").html(rows.join(""));
+        };
+
+        const refreshSalesData = function () {
+            $.getJSON("/api/sales-data")
+                .done(function (data) {
+                    $("#total-revenue").text(currencyFormatter.format(data.totalRevenue));
+                    $("#total-orders").text(data.totalOrders);
+
+                    if (data.topProduct) {
+                        $("#top-product-name").text(data.topProduct.name);
+                        $("#top-product-detail").text(data.topProduct.quantitySold + " sold");
+                    } else {
+                        $("#top-product-name").text("No sales yet");
+                        $("#top-product-detail").text("Waiting for orders");
+                    }
+
+                    renderTransactions(data.recentTransactions);
+                    $("#sales-updated-at").text("Updated " + new Date().toLocaleTimeString());
+                })
+                .fail(function () {
+                    $("#sales-updated-at").text("Unable to refresh sales data");
+                });
+        };
+
+        refreshSalesData();
+        setInterval(refreshSalesData, 10000);
+    });
+</script>

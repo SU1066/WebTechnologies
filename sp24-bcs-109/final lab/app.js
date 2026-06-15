@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 const path = require("path");
 const session = require("express-session");
 const flash = require("connect-flash");
+const expressLayouts = require("express-ejs-layouts");
 
 const app = express();
 
@@ -40,6 +41,8 @@ const productRoutes = require("./routes/productRoutes");
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+app.use(expressLayouts);
+app.set("layout", false);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -67,9 +70,11 @@ console.log("Test route initialized");
 
 const authRoutes = require("./routes/authRoutes");
 const apiRoutes = require("./routes/apiRoutes");
+const salesRoutes = require("./routes/salesRoutes");
 
 app.use(authRoutes);
 app.use("/api/v1", apiRoutes);
+app.use(salesRoutes);
 
 app.listen(3000, () => {
     console.log("Server running on port 3000");
